@@ -25,6 +25,13 @@ YPAD=10
 ICON_THEME="Adwaita"
 # applications to skip - between quotes and comma separated
 SKIP_APPS=[]
+# volume style - use a progress bar instead of text: 1 yes - 0 no
+# not a standard method
+VOLUME_STYLE=1
+# the size of the progress bar
+PBAR_WIDTH=12
+# the colour of the progress bar: "" for using the default
+PBAR_COLOR="#6A6A6A"
 # border width and colour
 BORDER_SIZE=2
 BORDER_COLOR="#7F7F7F"

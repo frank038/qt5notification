@@ -10,8 +10,8 @@ if SOUND_PLAYER == 2:
 import dbus.service as Service
 import dbus 
 from PyQt5.QtWidgets import QApplication, qApp, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QSizePolicy
-# if VOLUME_STYLE:
-    # from PyQt5.QtWidgets import QProgressBar
+if VOLUME_STYLE:
+    from PyQt5.QtWidgets import QProgressBar
 from PyQt5.QtGui import QIcon, QPixmap, QScreen, QPalette
 from PyQt5.QtCore import QCoreApplication, Qt, QTimer
 from dbus.mainloop.pyqt5 import DBusQtMainLoop
@@ -24,10 +24,6 @@ if USE_XDG:
 
 if ICON_THEME:
     QIcon.setThemeName(ICON_THEME)
-
-# VOL_DIFF = 0
-# if VOLUME_WIDTH < MIN_WIDTH:
-    # VOL_DIFF = (MIN_WIDTH-VOLUME_WIDTH)
 
 screen = None
 SCREEN_WIDTH = 0
@@ -91,12 +87,12 @@ class Notifier(Service.Object):
         replacesId = dbus_to_python(replacesId)
         if not replacesId:
             replacesdId = 0
-        # # 1 is reserved to x-canonical-private-synchronous
-        # if replacesId == 1:
-            # replacesId = 2
-        # # custom hint: x-canonical-private-synchronous
-        # if "x-canonical-private-synchronous" in hints:
-            # replacesId = 1
+        # 1 is reserved to x-canonical-private-synchronous
+        if replacesId == 1:
+            replacesId = 2
+        # custom hint: x-canonical-private-synchronous
+        if "x-canonical-private-synchronous" in hints:
+            replacesId = 1
         #
         if not dbus_to_python(appIcon):
             appIcon = ""
@@ -225,10 +221,7 @@ class Notifier(Service.Object):
                 yy = YPAD
             else:
                 yy = self.y+4
-            # #
-            # if _replaceid == 1:
-                # wnotification.setGeometry(SCREEN_WIDTH-MIN_WIDTH+VOL_DIFF-XPAD, yy, MIN_WIDTH, 10)
-            # else:
+            #
             wnotification.setGeometry(SCREEN_WIDTH-MIN_WIDTH-XPAD, yy, MIN_WIDTH, 10)
         #
         _is_found = 0
@@ -248,21 +241,21 @@ class Notifier(Service.Object):
         if _desktop_entry and USE_XDG:
             ret_icon = self._on_desktop_entry(os.path.basename(_desktop_entry))
         # 
-        # if VOLUME_STYLE:
-            # global USE_APP_NAME
-            # _OLD_APP_NAME = USE_APP_NAME
-            # _value = None
-            # if _replaceid == 1:
-                # if "%" in _summ:
-                    # _value = _summ.split(" ")[-1].strip("%")
-                    # try:
-                        # _value = int(_value)
-                    # except:
-                        # # guess a muted state
-                        # _value = 0
-                    # #
-                    # if _value >= 0:
-                        # USE_APP_NAME = 2
+        if VOLUME_STYLE:
+            global USE_APP_NAME
+            _OLD_APP_NAME = USE_APP_NAME
+            _value = None
+            if _replaceid == 1:
+                if "%" in _summ:
+                    _value = _summ.split(" ")[-1].strip("%")
+                    try:
+                        _value = int(_value)
+                    except:
+                        # guess a muted state
+                        _value = 0
+                    #
+                    if _value >= 0:
+                        USE_APP_NAME = 2
         #
         if USE_APP_NAME == 1:
             hbox1 = QHBoxLayout()
@@ -407,50 +400,49 @@ class Notifier(Service.Object):
                 hbox2.addWidget(cls_btn)
                 cls_btn.clicked.connect(lambda:self._on_btn_close(wnotification, _replaceid))
         #
-        # elif USE_APP_NAME == 2:
-            # hbox2 = QHBoxLayout()
-            # hbox2.setContentsMargins(10,0,10,0)
-            # vbox.addLayout(hbox2)
-            # #
-            # # icon label
-            # p_lbl = QLabel()
-            # p_lbl.setContentsMargins(0,0,0,0)
-            # p_lbl.resize(ICON_SIZE, ICON_SIZE)
-            # #
-            # if not _icon:
-                # wicon = QPixmap("icons/audio-volume-default.png")
-            # else:
-                # if QIcon.hasThemeIcon(_icon):
-                    # qicn = QIcon.fromTheme(_icon)
-                    # wicon = qicn.pixmap(p_lbl.size())
-                # elif QIcon.hasThemeIcon(_icon.strip("-symbolic")):
-                    # qicn = QIcon.fromTheme(_icon)
-                    # wicon = qicn.pixmap(p_lbl.size())
-                # else:
-                    # wicon = QPixmap(_icon)
-                    # if wicon.isNull():
-                        # wicon = QPixmap("icons/audio-volume-default.png")
-            # #
-            # p_lbl.setPixmap(wicon.scaled(p_lbl.size(),Qt.IgnoreAspectRatio))
-            # hbox2.addWidget(p_lbl)
-            # # progress bar
-            # pbar = QProgressBar()
-            # pbar.setContentsMargins(0,0,0,0)
-            # pbar.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Expanding)
-            # pbar.setOrientation(Qt.Horizontal) 
-            # pbar.setTextVisible(False)
-            # if PBAR_COLOR:
-                # pbar.setStyleSheet("::chunk {0}background-color:{1}; {2}".format("{",PBAR_COLOR,"}"))
-            # pbar.setMaximumSize(16777215, PBAR_WIDTH)
-            # pbar.setRange(0, 100)
-            # hbox2.addWidget(pbar, stretch=1)
-            # #
-            # pbar.setValue(int(_value))
-            # #
-            # _body = ""
-            # _action = None
-            # USE_APP_NAME = _OLD_APP_NAME
+        elif USE_APP_NAME == 2:
+            hbox2 = QHBoxLayout()
+            hbox2.setContentsMargins(10,0,10,0)
+            vbox.addLayout(hbox2)
             #
+            # icon label
+            p_lbl = QLabel()
+            p_lbl.setContentsMargins(0,0,0,0)
+            p_lbl.resize(ICON_SIZE, ICON_SIZE)
+            #
+            if not _icon:
+                wicon = QPixmap("icons/audio-volume-default.png")
+            else:
+                if QIcon.hasThemeIcon(_icon):
+                    qicn = QIcon.fromTheme(_icon)
+                    wicon = qicn.pixmap(p_lbl.size())
+                elif QIcon.hasThemeIcon(_icon.strip("-symbolic")):
+                    qicn = QIcon.fromTheme(_icon)
+                    wicon = qicn.pixmap(p_lbl.size())
+                else:
+                    wicon = QPixmap(_icon)
+                    if wicon.isNull():
+                        wicon = QPixmap("icons/audio-volume-default.png")
+            #
+            p_lbl.setPixmap(wicon.scaled(p_lbl.size(),Qt.IgnoreAspectRatio))
+            hbox2.addWidget(p_lbl)
+            # progress bar
+            pbar = QProgressBar()
+            pbar.setContentsMargins(0,0,0,0)
+            pbar.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Expanding)
+            pbar.setOrientation(Qt.Horizontal) 
+            pbar.setTextVisible(False)
+            if PBAR_COLOR:
+                pbar.setStyleSheet("::chunk {0}background-color:{1}; {2}".format("{",PBAR_COLOR,"}"))
+            pbar.setMaximumSize(16777215, PBAR_WIDTH)
+            pbar.setRange(0, 100)
+            hbox2.addWidget(pbar, stretch=1)
+            #
+            pbar.setValue(int(_value))
+            #
+            _body = ""
+            _action = None
+            USE_APP_NAME = _OLD_APP_NAME
         #
         ### body
         if _body:
@@ -520,7 +512,7 @@ class Notifier(Service.Object):
         if _replaceid > 0:
             self.win_notifications[wnotification] = _replaceid
         #
-        wnotification.setWindowTitle("qt5notification")
+        wnotification.setWindowTitle("qt5otification")
         wnotification.show()
         if not ww:
             if _body:
@@ -528,9 +520,6 @@ class Notifier(Service.Object):
                     wnotification.resize(max(wnotification.sizeHint().width(), MAX_WIDTH), wnotification.sizeHint().height())
                     wnotification.move(wnotification.geometry().x()+MIN_WIDTH-MAX_WIDTH,wnotification.geometry().y())
             else:
-                # if _replaceid == 1:
-                    # wnotification.resize(max(wnotification.sizeHint().width()-VOL_DIFF, MIN_WIDTH-VOL_DIFF), wnotification.sizeHint().height())
-                # else:
                 wnotification.resize(max(wnotification.sizeHint().width(), MIN_WIDTH), wnotification.sizeHint().height())
             wnotification.update()
         # remove old window
