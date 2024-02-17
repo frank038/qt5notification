@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# v. 1.3
+# v. 1.4
 
 from cfg import *
 if SOUND_PLAYER == 2:
@@ -527,17 +527,17 @@ class Notifier(Service.Object):
                 if body_lbl.wordWrap():
                     _MAX_WIDTH = max(MAX_WIDTH, body_lbl.size().width())
                     wnotification.resize(max(wnotification.sizeHint().width(), _MAX_WIDTH), wnotification.sizeHint().height())
-                    wnotification.move(SCREEN_WIDTH-_MAX_WIDTH,wnotification.geometry().y())
+                    wnotification.move(SCREEN_WIDTH-_MAX_WIDTH-XPAD,wnotification.geometry().y())
                 else:
                     # if _replaceid == 1:
                         # wnotification.resize(max(wnotification.sizeHint().width()-VOL_DIFF, MIN_WIDTH-VOL_DIFF), wnotification.sizeHint().height())
                     # else:
                     _MIN_WIDTH = max(MIN_WIDTH, body_lbl.size().width())
                     wnotification.resize(max(wnotification.sizeHint().width(), _MIN_WIDTH), wnotification.sizeHint().height())
-                    wnotification.move(SCREEN_WIDTH-_MIN_WIDTH,wnotification.geometry().y())
+                    wnotification.move(SCREEN_WIDTH-_MIN_WIDTH-XPAD,wnotification.geometry().y())
             else:
                 wnotification.resize(max(wnotification.sizeHint().width(), MIN_WIDTH), wnotification.sizeHint().height())
-                wnotification.move(SCREEN_WIDTH-MIN_WIDTH,wnotification.geometry().y())
+                wnotification.move(SCREEN_WIDTH-MIN_WIDTH-XPAD,wnotification.geometry().y())
             wnotification.update()
         # remove old window
         else:
