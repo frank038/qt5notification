@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# v. 1.1
+# v. 1.2
 
 from cfg import *
 if SOUND_PLAYER == 2:
@@ -525,13 +525,15 @@ class Notifier(Service.Object):
         if not ww:
             if _body:
                 if body_lbl.wordWrap():
-                    wnotification.resize(max(wnotification.sizeHint().width(), MAX_WIDTH), wnotification.sizeHint().height())
-                    wnotification.move(wnotification.geometry().x()+MIN_WIDTH-MAX_WIDTH,wnotification.geometry().y())
+                    _MAX_WIDTH = max(MAX_WIDTH, body_lbl.size().width())
+                    wnotification.resize(max(wnotification.sizeHint().width(), _MAX_WIDTH), wnotification.sizeHint().height())
+                    wnotification.move(wnotification.geometry().x()+MIN_WIDTH-_MAX_WIDTH,wnotification.geometry().y())
             else:
                 # if _replaceid == 1:
                     # wnotification.resize(max(wnotification.sizeHint().width()-VOL_DIFF, MIN_WIDTH-VOL_DIFF), wnotification.sizeHint().height())
                 # else:
-                wnotification.resize(max(wnotification.sizeHint().width(), MIN_WIDTH), wnotification.sizeHint().height())
+                _MIN_WIDTH = max(MIN_WIDTH, body_lbl.size().width())
+                wnotification.resize(max(wnotification.sizeHint().width(), _MIN_WIDTH), wnotification.sizeHint().height())
             wnotification.update()
         # remove old window
         else:
