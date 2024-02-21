@@ -17,6 +17,7 @@ Features
 - options in its config file
 - sounds (throu GSound or a custom player)
 - almost a complete support of freedesktop notification specs: actions, markup, hyperlink, etc.
+- volume style compatibility (see the config file for more)
 
 Do not let any window manager to manage the notification position.
 
