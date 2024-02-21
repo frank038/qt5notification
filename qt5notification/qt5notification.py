@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# v. 1.4
+# v. 1.5
 
 from cfg import *
 if SOUND_PLAYER == 2:
@@ -10,8 +10,8 @@ if SOUND_PLAYER == 2:
 import dbus.service as Service
 import dbus 
 from PyQt5.QtWidgets import QApplication, qApp, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QSizePolicy
-# if VOLUME_STYLE:
-    # from PyQt5.QtWidgets import QProgressBar
+if VOLUME_STYLE:
+    from PyQt5.QtWidgets import QProgressBar
 from PyQt5.QtGui import QIcon, QPixmap, QScreen, QPalette
 from PyQt5.QtCore import QCoreApplication, Qt, QTimer
 from dbus.mainloop.pyqt5 import DBusQtMainLoop
@@ -24,10 +24,6 @@ if USE_XDG:
 
 if ICON_THEME:
     QIcon.setThemeName(ICON_THEME)
-
-# VOL_DIFF = 0
-# if VOLUME_WIDTH < MIN_WIDTH:
-    # VOL_DIFF = (MIN_WIDTH-VOLUME_WIDTH)
 
 screen = None
 SCREEN_WIDTH = 0
@@ -68,14 +64,15 @@ class Notifier(Service.Object):
         Service.Object.__init__(self, object_path = "/org/freedesktop/Notifications", bus_name = Service.BusName(bus, conn))
         self.message = 0
         self.widget = None
-        # win - replacesId
+        # win - replacesId - only with replaceId > 0
         self.win_notifications = {}
         # y position of the next notification
         self.y = 0
         # window - replacesId
-        self.list_notifications = {}
-        #
-
+        self.list_notifications = []
+        # # last notification window appeared
+        # self.last_w = []
+    
     @Service.method("org.freedesktop.Notifications", out_signature="as")
     def GetCapabilities(self):
         return ["actions", "action-icons", "body", "body-markup", "body-hyperlinks", "body-images", "icon-static", "sound"]
@@ -91,12 +88,12 @@ class Notifier(Service.Object):
         replacesId = dbus_to_python(replacesId)
         if not replacesId:
             replacesdId = 0
-        # # 1 is reserved to x-canonical-private-synchronous
-        # if replacesId == 1:
-            # replacesId = 2
-        # # custom hint: x-canonical-private-synchronous
-        # if "x-canonical-private-synchronous" in hints:
-            # replacesId = 1
+        # 1 is reserved to x-canonical-private-synchronous
+        if replacesId == 1:
+            replacesId = 2
+        # custom hint: x-canonical-private-synchronous
+        if "x-canonical-private-synchronous" in hints:
+            replacesId = 1
         #
         if not dbus_to_python(appIcon):
             appIcon = ""
@@ -105,7 +102,7 @@ class Notifier(Service.Object):
                 expireTimeout = 10000
             self._qw(appName, summary, body, replacesId, action_1, hints, expireTimeout, appIcon)
         else:
-            action = []
+            action_1 = []
             self._qw(appName, summary, body, replacesId, action_1, hints, expireTimeout, appIcon)
         #
         self.message += 1
@@ -150,8 +147,15 @@ class Notifier(Service.Object):
         #
         if ww in self.win_notifications:
             del self.win_notifications[ww]
-        if ww in self.list_notifications:
-            del self.list_notifications[ww]
+        # if ww in self.list_notifications:
+            # del self.list_notifications[ww]
+        for el in self.list_notifications:
+            if el[0] == ww:
+                self.list_notifications.remove(el)
+                break
+        #
+        if self.list_notifications == []:
+            self.y = 0
         #
         ww.destroy()
     
@@ -183,15 +187,23 @@ class Notifier(Service.Object):
         #
         if ww in self.win_notifications:
             del self.win_notifications[ww]
-        if ww in self.list_notifications:
-            del self.list_notifications[ww]
+        # if ww in self.list_notifications:
+            # del self.list_notifications[ww]
+        for el in self.list_notifications:
+            if el[0] == ww:
+                self.list_notifications.remove(el)
+                break
+        #
+        if self.list_notifications == []:
+            self.y = 0
         #
         ww.destroy()
     
 
     def _qw(self, _appname, _summ, _body, _replaceid, _action, _hints, _timeout, _icon):
+        # for replacing the previous notification with same id
         ww = self._find_notification(_replaceid)
-        #
+        # to not overlay notifications
         old_wgeom = None
         if ww:
             old_wgeom = ww.geometry()
@@ -199,8 +211,12 @@ class Notifier(Service.Object):
                 ww.timer.stop()
                 if ww in self.win_notifications:
                     del self.win_notifications[ww]
-                if ww in self.list_notifications:
-                    del self.list_notifications[ww]
+                # if ww in self.list_notifications:
+                    # del self.list_notifications[ww]
+                for el in self.list_notifications:
+                    if el[0] == ww:
+                        self.list_notifications.remove(el)
+                        break
         #
         if NOT_COLOR != "":
             qApp.setStyleSheet("#mainwin {0} background-color:{4}; border:{1}px solid {2} {3}".format("{", BORDER_SIZE, BORDER_COLOR, "}", NOT_COLOR))
@@ -221,134 +237,54 @@ class Notifier(Service.Object):
         if old_wgeom:
             wnotification.setGeometry(old_wgeom)
         else:
-            if self.y == 0 or self.list_notifications == {}:
+            if self.y == 0 or self.list_notifications == []:
+            # if self.y == 0:
                 yy = YPAD
             else:
                 yy = self.y+4
-            # #
-            # if _replaceid == 1:
-                # wnotification.setGeometry(SCREEN_WIDTH-MIN_WIDTH+VOL_DIFF-XPAD, yy, MIN_WIDTH, 10)
-            # else:
+            #
             wnotification.setGeometry(SCREEN_WIDTH-MIN_WIDTH-XPAD, yy, MIN_WIDTH, 10)
         #
-        _is_found = 0
-        for ewin in self.list_notifications:
-            if self.list_notifications[ewin] == _replaceid:
-                _is_found = 1
-                break
-        if _is_found == 0:
-            self.list_notifications[wnotification] = _replaceid
+        # _is_found = 0
+        # for ewin in self.list_notifications:
+            # # if self.list_notifications[ewin] == _replaceid:
+            # # if self.win_notifications[ewin] == _replaceid:
+            # # if ewin[1] == _replaceid:
+                # _is_found = 1
+                # break
+        # if _is_found == 0:
+            # self.list_notifications[wnotification] = _replaceid
+        self.list_notifications.append([wnotification, _replaceid])
+        #
+        hbox1 = QHBoxLayout()
+        hbox1.setContentsMargins(0,0,0,0)
+        wnotification.setLayout(hbox1)
         #
         vbox = QVBoxLayout()
         vbox.setContentsMargins(0,0,0,0)
-        wnotification.setLayout(vbox)
+        # wnotification.setLayout(vbox)
         #
         _desktop_entry = self._on_hints(_hints, "desktop-entry")
         ret_icon = None
         if _desktop_entry and USE_XDG:
             ret_icon = self._on_desktop_entry(os.path.basename(_desktop_entry))
         # 
-        # if VOLUME_STYLE:
-            # global USE_APP_NAME
-            # _OLD_APP_NAME = USE_APP_NAME
-            # _value = None
-            # if _replaceid == 1:
-                # if "%" in _summ:
-                    # _value = _summ.split(" ")[-1].strip("%")
-                    # try:
-                        # _value = int(_value)
-                    # except:
-                        # # guess a muted state
-                        # _value = 0
-                    # #
-                    # if _value >= 0:
-                        # USE_APP_NAME = 2
+        if VOLUME_STYLE:
+            global USE_APP_NAME
+            _OLD_APP_NAME = USE_APP_NAME
+            _value = None
+            if _replaceid == 1:
+                _value = self._on_hints(_hints, "value")
+                if _value and _value >= 0:
+                    USE_APP_NAME = 2
         #
-        if USE_APP_NAME == 1:
-            hbox1 = QHBoxLayout()
-            hbox1.setContentsMargins(0,0,0,0)
-            vbox.addLayout(hbox1)
-            # icon
-            if ret_icon:
-                if QIcon.hasThemeIcon(ret_icon):
-                    qicn = QIcon.fromTheme(ret_icon)
-                    wicon = qicn.pixmap(p_lbl.size())
-            else:
-                _image_path = self._on_hints(_hints, "image-path")
-                if _image_path:
-                    wicon = QPixmap(_image_path)
-                #
-                else:
-                    if not _icon:
-                        wicon = QPixmap("icons/wicon.png")
-                    else:
-                        if QIcon.hasThemeIcon(_icon):
-                            qicn = QIcon.fromTheme(_icon)
-                            wicon = qicn.pixmap(p_lbl.size())
-                        elif QIcon.hasThemeIcon(_icon.strip("-symbolic")):
-                            qicn = QIcon.fromTheme(_icon)
-                            wicon = qicn.pixmap(p_lbl.size())
-                        else:
-                            wicon = QPixmap(_icon)
-                            if wicon.isNull():
-                                wicon = QPixmap("icons/wicon.png")
-            p_lbl.setPixmap(wicon.scaled(p_lbl.size(),Qt.IgnoreAspectRatio))
-            hbox1.addWidget(p_lbl)
+        if USE_APP_NAME != 2:
             # application name
-            appname_lbl = QLabel(_appname)
-            appname_lbl.setContentsMargins(0,0,0,0)
-            hbox1.addWidget(appname_lbl, stretch=1, alignment=Qt.AlignHCenter)
-            # close button
-            if _replaceid == 0 or _replaceid > 1:
-                cls_btn = QPushButton()
-                cls_btn.setContentsMargins(0,0,0,0)
-                cls_btn.setFlat(True)
-                #
-                if QIcon.hasThemeIcon("window-close"):
-                    cls_btn.setIcon(QIcon.fromTheme("window-close"))
-                else:
-                    cls_btn.setIcon(QIcon("icons/window-close.png"))
-                hbox2.addWidget(cls_btn)
-                cls_btn.clicked.connect(lambda:self._on_btn_close(wnotification, _replaceid))
-            ### summary
-            hbox2 = QHBoxLayout()
-            hbox2.setContentsMargins(0,0,0,0)
-            vbox.addLayout(hbox2)
-            p_lbl = QLabel()
-            p_lbl.setContentsMargins(0,0,0,0)
-            p_lbl.resize(ICON_SIZE, ICON_SIZE)
-            # # icon
-            # if ret_icon:
-                # if QIcon.hasThemeIcon(ret_icon):
-                    # qicn = QIcon.fromTheme(ret_icon)
-                    # wicon = qicn.pixmap(p_lbl.size())
-            # else:
-                # _image_path = self._on_hints(_hints, "image-path")
-                # if _image_path:
-                    # wicon = QPixmap(_image_path)
-                # #
-                # else:
-                    # if not _icon:
-                        # wicon = QPixmap("icons/wicon.png")
-                    # else:
-                        # if QIcon.hasThemeIcon(_icon):
-                            # qicn = QIcon.fromTheme(_icon)
-                            # wicon = qicn.pixmap(p_lbl.size())
-                        # elif QIcon.hasThemeIcon(_icon.strip("-symbolic")):
-                            # qicn = QIcon.fromTheme(_icon)
-                            # wicon = qicn.pixmap(p_lbl.size())
-                        # else:
-                            # wicon = QPixmap(_icon)
-                            # if wicon.isNull():
-                                # wicon = QPixmap("icons/wicon.png")
-            # #
-            # p_lbl.setPixmap(wicon.scaled(p_lbl.size(),Qt.IgnoreAspectRatio))
-            # hbox2.addWidget(p_lbl)
-            # summary
-            summary_lbl = QLabel(_summ)
-            hbox2.addWidget(summary_lbl, alignment=Qt.AlignLeft)
-        #
-        elif USE_APP_NAME == 0:
+            if USE_APP_NAME == 1:
+                appname_lbl = QLabel(_appname)
+                appname_lbl.setContentsMargins(0,0,0,0)
+                vbox.addWidget(appname_lbl, stretch=1, alignment=Qt.AlignCenter)
+            #
             hbox2 = QHBoxLayout()
             hbox2.setContentsMargins(0,0,0,0)
             vbox.addLayout(hbox2)
@@ -388,7 +324,10 @@ class Notifier(Service.Object):
                                 wicon = QPixmap("icons/wicon.png")
             #
             p_lbl.setPixmap(wicon.scaled(p_lbl.size(),Qt.IgnoreAspectRatio))
-            hbox2.addWidget(p_lbl)
+            # hbox2.addWidget(p_lbl)
+            hbox1.addWidget(p_lbl)
+            #
+            hbox1.addLayout(vbox)
             # summary
             summary_lbl = QLabel(_summ)
             summary_lbl.setContentsMargins(0,0,0,0)
@@ -407,50 +346,54 @@ class Notifier(Service.Object):
                 hbox2.addWidget(cls_btn)
                 cls_btn.clicked.connect(lambda:self._on_btn_close(wnotification, _replaceid))
         #
-        # elif USE_APP_NAME == 2:
-            # hbox2 = QHBoxLayout()
-            # hbox2.setContentsMargins(10,0,10,0)
+        elif USE_APP_NAME == 2:
+            hbox2 = QHBoxLayout()
+            hbox2.setContentsMargins(10,0,10,0)
             # vbox.addLayout(hbox2)
-            # #
-            # # icon label
-            # p_lbl = QLabel()
-            # p_lbl.setContentsMargins(0,0,0,0)
-            # p_lbl.resize(ICON_SIZE, ICON_SIZE)
-            # #
-            # if not _icon:
-                # wicon = QPixmap("icons/audio-volume-default.png")
-            # else:
-                # if QIcon.hasThemeIcon(_icon):
-                    # qicn = QIcon.fromTheme(_icon)
-                    # wicon = qicn.pixmap(p_lbl.size())
-                # elif QIcon.hasThemeIcon(_icon.strip("-symbolic")):
-                    # qicn = QIcon.fromTheme(_icon)
-                    # wicon = qicn.pixmap(p_lbl.size())
-                # else:
-                    # wicon = QPixmap(_icon)
-                    # if wicon.isNull():
-                        # wicon = QPixmap("icons/audio-volume-default.png")
-            # #
-            # p_lbl.setPixmap(wicon.scaled(p_lbl.size(),Qt.IgnoreAspectRatio))
-            # hbox2.addWidget(p_lbl)
-            # # progress bar
-            # pbar = QProgressBar()
-            # pbar.setContentsMargins(0,0,0,0)
-            # pbar.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Expanding)
-            # pbar.setOrientation(Qt.Horizontal) 
-            # pbar.setTextVisible(False)
-            # if PBAR_COLOR:
-                # pbar.setStyleSheet("::chunk {0}background-color:{1}; {2}".format("{",PBAR_COLOR,"}"))
-            # pbar.setMaximumSize(16777215, PBAR_WIDTH)
-            # pbar.setRange(0, 100)
-            # hbox2.addWidget(pbar, stretch=1)
-            # #
-            # pbar.setValue(int(_value))
-            # #
-            # _body = ""
-            # _action = None
-            # USE_APP_NAME = _OLD_APP_NAME
+            hbox1.addLayout(hbox2)
             #
+            # icon label
+            p_lbl = QLabel()
+            p_lbl.setContentsMargins(0,0,0,0)
+            p_lbl.resize(ICON_SIZE, ICON_SIZE)
+            #
+            if not _icon:
+                wicon = QPixmap("icons/audio-volume-default.png")
+            else:
+                if QIcon.hasThemeIcon(_icon):
+                    qicn = QIcon.fromTheme(_icon)
+                    wicon = qicn.pixmap(p_lbl.size())
+                elif QIcon.hasThemeIcon(_icon.strip("-symbolic")):
+                    qicn = QIcon.fromTheme(_icon)
+                    wicon = qicn.pixmap(p_lbl.size())
+                else:
+                    wicon = QPixmap(_icon)
+                    if wicon.isNull():
+                        wicon = QPixmap("icons/audio-volume-default.png")
+            #
+            p_lbl.setPixmap(wicon.scaled(p_lbl.size(),Qt.IgnoreAspectRatio))
+            hbox2.addWidget(p_lbl)
+            # numeric value
+            if SHOW_VALUE == 1:
+                vlabel = QLabel(str(_value))
+                hbox2.addWidget(vlabel)
+            # progress bar
+            pbar = QProgressBar()
+            pbar.setContentsMargins(0,0,0,0)
+            pbar.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Expanding)
+            pbar.setOrientation(Qt.Horizontal) 
+            pbar.setTextVisible(False)
+            if PBAR_COLOR:
+                pbar.setStyleSheet("::chunk {0}background-color:{1}; {2}".format("{",PBAR_COLOR,"}"))
+            pbar.setMaximumSize(16777215, PBAR_WIDTH)
+            pbar.setRange(0, 100)
+            hbox2.addWidget(pbar, stretch=1)
+            #
+            pbar.setValue(int(_value))
+            #
+            _body = ""
+            _action = None
+            USE_APP_NAME = _OLD_APP_NAME
         #
         ### body
         if _body:
@@ -460,7 +403,7 @@ class Notifier(Service.Object):
             vbox.addLayout(hbox3)
             body_lbl = QLabel(_body)
             body_lbl.setContentsMargins(0,0,0,0)
-            body_lbl.setIndent(20)
+            # body_lbl.setIndent(20)
             #
             body_lbl.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Expanding)
             body_lbl.resize(body_lbl.sizeHint())
@@ -504,8 +447,15 @@ class Notifier(Service.Object):
                 self.NotificationClosed(_replaceid, 3)
                 if tww in self.win_notifications:
                     del self.win_notifications[tww]
-                if tww in self.list_notifications:
-                    del self.list_notifications[tww]
+                # if tww in self.list_notifications:
+                    # del self.list_notifications[tww]
+                for el in self.list_notifications:
+                    if el[0] == tww:
+                        self.list_notifications.remove(el)
+                        break
+                #
+                if self.list_notifications == []:
+                    self.y = 0
                 #
                 tww.hide()
                 tww.destroy()
@@ -525,15 +475,16 @@ class Notifier(Service.Object):
         if not ww:
             if _body:
                 if body_lbl.wordWrap():
-                    _MAX_WIDTH = max(MAX_WIDTH, body_lbl.size().width())
-                    wnotification.resize(max(wnotification.sizeHint().width(), _MAX_WIDTH), wnotification.sizeHint().height())
+                    # _MAX_WIDTH = max(MAX_WIDTH, body_lbl.size().width())
+                    # wnotification.resize(max(wnotification.sizeHint().width()-ICON_SIZE, _MAX_WIDTH-ICON_SIZE), wnotification.sizeHint().height())
+                    _MAX_WIDTH = max(MAX_WIDTH, body_lbl.size().width(), wnotification.sizeHint().width())
+                    wnotification.resize(_MAX_WIDTH, wnotification.sizeHint().height())
                     wnotification.move(SCREEN_WIDTH-_MAX_WIDTH-XPAD,wnotification.geometry().y())
                 else:
-                    # if _replaceid == 1:
-                        # wnotification.resize(max(wnotification.sizeHint().width()-VOL_DIFF, MIN_WIDTH-VOL_DIFF), wnotification.sizeHint().height())
-                    # else:
-                    _MIN_WIDTH = max(MIN_WIDTH, body_lbl.size().width())
-                    wnotification.resize(max(wnotification.sizeHint().width(), _MIN_WIDTH), wnotification.sizeHint().height())
+                    # _MIN_WIDTH = max(MIN_WIDTH, body_lbl.size().width())
+                    # wnotification.resize(max(wnotification.sizeHint().width(), _MIN_WIDTH), wnotification.sizeHint().height())
+                    _MIN_WIDTH = max(MIN_WIDTH, body_lbl.size().width(), wnotification.sizeHint().width())
+                    wnotification.resize(_MIN_WIDTH, wnotification.sizeHint().height())
                     wnotification.move(SCREEN_WIDTH-_MIN_WIDTH-XPAD,wnotification.geometry().y())
             else:
                 wnotification.resize(max(wnotification.sizeHint().width(), MIN_WIDTH), wnotification.sizeHint().height())
@@ -547,7 +498,7 @@ class Notifier(Service.Object):
         wgeom = wnotification.geometry()
         if not ww:
             self.y = (wgeom.y()+wgeom.height())
-        if self.y > SCREEN_HEIGHT:
+        if self.y > SCREEN_HEIGHT-ICON_SIZE*2:
             self.y = 0
         #
         # if not _action:

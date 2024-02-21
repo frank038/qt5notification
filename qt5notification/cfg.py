@@ -30,4 +30,14 @@ BORDER_SIZE=2
 BORDER_COLOR="#7F7F7F"
 # action button border colour
 BTN_BORDER_COLOR="#D4CACA"
+# volume style - use a progress bar instead of text: 1 yes - 0 no
+# not a standard method
+# e.g.: notify-send --hint=string:x-canonical-private-synchronous:None --hint=int:value:30 Volume
+VOLUME_STYLE=1
+# the size of the progress bar
+PBAR_WIDTH=12
+# the colour of the progress bar: "" for using the default
+PBAR_COLOR="#6A6A6A"
+# show also the numeric value
+SHOW_VALUE=0
 ########
