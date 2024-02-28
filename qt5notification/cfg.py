@@ -30,9 +30,13 @@ BORDER_SIZE=2
 BORDER_COLOR="#7F7F7F"
 # action button border colour
 BTN_BORDER_COLOR="#D4CACA"
+# do not show: 0 do not use this - 1 only urgency low - 2 only urgency normal and low - 3 none
+# a file named notificationdonotuse_THE_VALUE_ABOVE should exist in this program directory
+DO_NOT_SHOW=0
 # volume style - use a progress bar instead of text: 1 yes - 0 no
+# e.g.: notify-send some_not_used_summary NORMALIZED/NOT_NORMALIZED_VALUE --hint=string:x-canonical-private-synchronous:None --hint=int:value:NORMALIZED_VALUE
+# NORMALIZED_VALUE: between 0 and 100, or 0 or 100
 # not a standard method
-# e.g.: notify-send --hint=string:x-canonical-private-synchronous:None --hint=int:value:30 Volume
 VOLUME_STYLE=1
 # the size of the progress bar
 PBAR_WIDTH=12
