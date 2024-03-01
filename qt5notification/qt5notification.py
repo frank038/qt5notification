@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# v. 1.6
+# v. 1.6.1
 
 from cfg import *
 if SOUND_PLAYER == 2:
@@ -236,6 +236,21 @@ class Notifier(Service.Object):
                             label_value = child
                 elif isinstance(child, QProgressBar):
                     progress_bar = child
+            #
+            if progress_bar == None:
+                if ww in self.win_notifications:
+                    del self.win_notifications[ww]
+                # if ww in self.list_notifications:
+                    # del self.list_notifications[ww]
+                for el in self.list_notifications:
+                    if el[0] == ww:
+                        self.list_notifications.remove(el)
+                        break
+                try:
+                    ww.destroy()
+                except:
+                    pass
+                return
             #
             _value = None
             if _replaceid == 1:
