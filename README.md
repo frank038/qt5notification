@@ -8,17 +8,18 @@ Requirements:
 - pyqt5
 - dbus
 - xdg
-- GSound (optional, but recommended for full sound support)
-- freedesktop sounds (optional, but recommended for full sound support)
+
+Optional, for sounds:
+- QtMultimedia (the default)
+- GSound + freedesktop sounds (for full sound event support)
+- an external audio player
 
 
 Features
 
 - options in its config file
-- sounds (throu GSound or a custom player)
+- sounds: many options for enabling or disabling sounds for different kind of events
 - almost a complete support of freedesktop notification specs: actions, markup, hyperlink, etc.
 - volume style compatibility (see the config file for more)
 
 Do not let any window manager to manage the notification position.
-
-May have issues.
