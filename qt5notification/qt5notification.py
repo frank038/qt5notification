@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# v. 1.6.1
+# v. 1.6.3
 
 from cfg import *
 if SOUND_PLAYER == 2:
@@ -12,6 +12,8 @@ if DO_NOT_SHOW > 0:
 import dbus.service as Service
 import dbus 
 from PyQt5.QtWidgets import QApplication, qApp, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QSizePolicy
+if SOUND_PLAYER == 1:
+    from PyQt5.QtMultimedia import QSound
 if VOLUME_STYLE:
     from PyQt5.QtWidgets import QProgressBar
 from PyQt5.QtGui import QIcon, QPixmap, QScreen, QPalette
@@ -202,6 +204,22 @@ class Notifier(Service.Object):
         #
         ww.destroy()
     
+    def _timer(self, tww, _replaceid):
+        self.NotificationClosed(_replaceid, 3)
+        if tww in self.win_notifications:
+            del self.win_notifications[tww]
+        # if tww in self.list_notifications:
+            # del self.list_notifications[tww]
+        for el in self.list_notifications:
+            if el[0] == tww:
+                self.list_notifications.remove(el)
+                break
+        #
+        if self.list_notifications == []:
+            self.y = 0
+        #
+        tww.hide()
+        tww.destroy()
 
     def _qw(self, _appname, _summ, _body, _replaceid, _action, _hints, _timeout, _icon):
         # do not show the notification
@@ -221,65 +239,77 @@ class Notifier(Service.Object):
         _is_volume_style_notification = None
         if ww and _replaceid == 1:
             _is_volume_style_notification = ww
-            ww.timer.stop()
+            if ww.timer.isActive():
+                ww.timer.stop()
+                _timer = ww.timer
+                _timer.deleteLater()
         if  _is_volume_style_notification != None:
-            # widgets in ww: QHBoxLayout QLabel_icon QLabel_value QProgressBar
-            label_icon = None
-            label_value = None
-            progress_bar = None
-            for child in ww.children():
-                if isinstance(child, QLabel):
-                    if child.pixmap():
-                        label_icon = child
+            try:
+                # widgets in ww: QHBoxLayout QLabel_icon QLabel_value QProgressBar
+                label_icon = None
+                label_value = None
+                progress_bar = None
+                for child in ww.children():
+                    if isinstance(child, QLabel):
+                        if child.pixmap():
+                            label_icon = child
+                        else:
+                            if SHOW_VALUE == 1:
+                                label_value = child
+                    elif isinstance(child, QProgressBar):
+                        progress_bar = child
+                #
+                if progress_bar == None:
+                    if ww in self.win_notifications:
+                        del self.win_notifications[ww]
+                    # if ww in self.list_notifications:
+                        # del self.list_notifications[ww]
+                    for el in self.list_notifications:
+                        if el[0] == ww:
+                            self.list_notifications.remove(el)
+                            break
+                    try:
+                        ww.destroy()
+                    except:
+                        pass
+                    return
+                #
+                _value = None
+                if _replaceid == 1:
+                    _value = self._on_hints(_hints, "value")
+                #
+                if not _icon:
+                    wicon = QPixmap("icons/audio-volume-default.png")
+                else:
+                    if QIcon.hasThemeIcon(_icon):
+                        qicn = QIcon.fromTheme(_icon)
+                        wicon = qicn.pixmap(label_icon.size())
+                    elif QIcon.hasThemeIcon(_icon.strip("-symbolic")):
+                        qicn = QIcon.fromTheme(_icon)
+                        wicon = qicn.pixmap(label_icon.size())
                     else:
-                        if SHOW_VALUE == 1:
-                            label_value = child
-                elif isinstance(child, QProgressBar):
-                    progress_bar = child
-            #
-            if progress_bar == None:
-                if ww in self.win_notifications:
-                    del self.win_notifications[ww]
-                # if ww in self.list_notifications:
-                    # del self.list_notifications[ww]
-                for el in self.list_notifications:
-                    if el[0] == ww:
-                        self.list_notifications.remove(el)
-                        break
-                try:
-                    ww.destroy()
-                except:
-                    pass
+                        wicon = QPixmap(_icon)
+                        if wicon.isNull():
+                            wicon = QPixmap("icons/audio-volume-default.png")
+                #
+                label_icon.setPixmap(wicon.scaled(label_icon.size(),Qt.IgnoreAspectRatio))
+                if SHOW_VALUE == 1:
+                    if _body:
+                        label_value.setText(str(_body))
+                    else:
+                        label_value.setText(str(_value))
+                progress_bar.setValue(int(_value))
+                if _timeout == -1:
+                    _timeout = TIMEOUT
+                #
+                timer = QTimer()
+                timer.setSingleShot(True)
+                timer.timeout.connect(lambda:self._timer(ww, _replaceid))
+                ww.timer = None
+                ww.timer = timer
+                ww.timer.start(_timeout)
+            except:
                 return
-            #
-            _value = None
-            if _replaceid == 1:
-                _value = self._on_hints(_hints, "value")
-            #
-            if not _icon:
-                wicon = QPixmap("icons/audio-volume-default.png")
-            else:
-                if QIcon.hasThemeIcon(_icon):
-                    qicn = QIcon.fromTheme(_icon)
-                    wicon = qicn.pixmap(label_icon.size())
-                elif QIcon.hasThemeIcon(_icon.strip("-symbolic")):
-                    qicn = QIcon.fromTheme(_icon)
-                    wicon = qicn.pixmap(label_icon.size())
-                else:
-                    wicon = QPixmap(_icon)
-                    if wicon.isNull():
-                        wicon = QPixmap("icons/audio-volume-default.png")
-            #
-            label_icon.setPixmap(wicon.scaled(label_icon.size(),Qt.IgnoreAspectRatio))
-            if SHOW_VALUE == 1:
-                if _body:
-                    label_value.setText(str(_body))
-                else:
-                    label_value.setText(str(_value))
-            progress_bar.setValue(int(_value))
-            if _timeout == -1:
-                _timeout = TIMEOUT
-            ww.timer.start(_timeout)
         else:
             # to not overlay notifications
             old_wgeom = None
@@ -524,28 +554,11 @@ class Notifier(Service.Object):
             #
             # if not _action:
             if 1:
-                def _timer(tww):
-                    self.NotificationClosed(_replaceid, 3)
-                    if tww in self.win_notifications:
-                        del self.win_notifications[tww]
-                    # if tww in self.list_notifications:
-                        # del self.list_notifications[tww]
-                    for el in self.list_notifications:
-                        if el[0] == tww:
-                            self.list_notifications.remove(el)
-                            break
-                    #
-                    if self.list_notifications == []:
-                        self.y = 0
-                    #
-                    tww.hide()
-                    tww.destroy()
-                #
                 timer=QTimer()
                 if _timeout == -1:
                     _timeout = TIMEOUT
                 timer.setSingleShot(True)
-                timer.timeout.connect(lambda:_timer(wnotification))
+                timer.timeout.connect(lambda:self._timer(wnotification, _replaceid))
                 wnotification.timer = timer
             #
             if _replaceid > 0:
@@ -588,6 +601,7 @@ class Notifier(Service.Object):
         #
         _no_sound = self._on_hints(_hints, "suppress-sound")
         _soundfile = self._on_hints(_hints, "sound-file")
+        _urgency = self._on_hints(_hints, "urgency")
         #
         if not _soundfile:
             _soundfile = self._on_hints(_hints, "sound-name")
@@ -595,15 +609,22 @@ class Notifier(Service.Object):
             self._play_sound(_soundfile)
         else:
             if PLAY_STANDARD_SOUND:
-                _urgency = self._on_hints(_hints, "urgency")
-                if _urgency == 1 or _urgency == None:
-                    self._play_sound("sounds/urgency-normal.wav")
+                if _replaceid == 1:
+                    if VOLUME_NO_AUDIO == 0:
+                        self._play_sound("sounds/volume-sound.wav")
+                elif _urgency == 1 or _urgency == None:
+                    if PLAY_STANDARD_SOUND == 1:
+                        self._play_sound("sounds/urgency-normal.wav")
                 elif _urgency == 2:
-                    self._play_sound("sounds/urgency-critical.wav")
+                    if PLAY_STANDARD_SOUND in [1,2]:
+                        self._play_sound("sounds/urgency-critical.wav")
 
     # sound event player
     def _play_sound(self, _sound):
-        if SOUND_PLAYER == 2:
+        if SOUND_PLAYER == 1:
+            QSound.play(_sound)
+            return
+        elif SOUND_PLAYER == 2:
             try:
                 ctx = GSound.Context()
                 ctx.init()

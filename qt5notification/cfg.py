@@ -13,11 +13,11 @@ ICON_SIZE=64
 NOT_COLOR=""
 # font colour: "" default colour - or e.g. "#ffffff" (white)
 WIDGETS_FONT_COLOR=""
-# play sound at any notification appearance: 1 yes - 0 no
+# play sound at any notification appearance: 1 yes - 0 no - 2 only urgent
 PLAY_STANDARD_SOUND=1
-# PLAYER: 2 use canberra (GSound) - "PROGRAM_NAME" use a custom command e.g. aplay (between quotes)
+# PLAYER: 1 use QtMultimedia - 2 use canberra (GSound) - "PROGRAM_NAME" use a custom command e.g. aplay (between quotes)
 # use canberra (2) for a complete sound support
-SOUND_PLAYER=2
+SOUND_PLAYER=1
 # notification position indent from right and from top
 XPAD=10
 YPAD=10
@@ -34,7 +34,7 @@ BTN_BORDER_COLOR="#D4CACA"
 # a file named notificationdonotuse_THE_VALUE_ABOVE should exist in this program directory
 DO_NOT_SHOW=0
 # volume style - use a progress bar instead of text: 1 yes - 0 no
-# e.g.: notify-send some_not_used_summary NORMALIZED/NOT_NORMALIZED_VALUE --hint=string:x-canonical-private-synchronous:None --hint=int:value:NORMALIZED_VALUE
+# e.g.: notify-send some_not_used_summary NORMALIZED/NOT_NORMALIZED_VALUE -i AN_ICON --hint=string:x-canonical-private-synchronous:None --hint=int:value:NORMALIZED_VALUE
 # NORMALIZED_VALUE: between 0 and 100, or 0 or 100
 # not a standard method
 VOLUME_STYLE=1
@@ -44,4 +44,6 @@ PBAR_WIDTH=12
 PBAR_COLOR="#6A6A6A"
 # show also the numeric value
 SHOW_VALUE=0
+# skip audio notification: 0 play sound - 1 do not play
+VOLUME_NO_AUDIO=0
 ########
