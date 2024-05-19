@@ -30,7 +30,7 @@ BORDER_SIZE=2
 BORDER_COLOR="#7F7F7F"
 # action button border colour
 BTN_BORDER_COLOR="#D4CACA"
-# do not show: 0 do not use this - 1 only urgency low - 2 only urgency normal and low - 3 none
+# do not show: 0 do not use this - any value: 1 only urgency low - 2 only urgency normal and low - 3 none
 # a file named notificationdonotuse_THE_VALUE_ABOVE should exist in this program directory
 DO_NOT_SHOW=0
 # volume style - use a progress bar instead of text: 1 yes - 0 no

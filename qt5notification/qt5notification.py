@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# v. 1.6.3
+# v. 1.6.4
 
 from cfg import *
 if SOUND_PLAYER == 2:
@@ -225,7 +225,10 @@ class Notifier(Service.Object):
         # do not show the notification
         _do_not_show = 0
         if DO_NOT_SHOW > 0:
-            _dfile = glob.glob("notificationdonotuse_*")[0].split("_")[-1]
+            try:
+                _dfile = glob.glob("notificationdonotuse_*")[0].split("_")[-1]
+            except:
+                _dfile = 0
             if _dfile in ["1","2","3"]:
                 _do_not_show = int(_dfile)
         if DO_NOT_SHOW > 0 and _do_not_show != 0:
