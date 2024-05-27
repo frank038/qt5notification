@@ -304,6 +304,8 @@ class Notifier(Service.Object):
                 progress_bar.setValue(int(_value))
                 if _timeout == -1:
                     _timeout = TIMEOUT
+                elif _timeout < TIMEOUT:
+                    _timeout = TIMEOUT
                 #
                 timer = QTimer()
                 timer.setSingleShot(True)
@@ -559,6 +561,8 @@ class Notifier(Service.Object):
             if 1:
                 timer=QTimer()
                 if _timeout == -1:
+                    _timeout = TIMEOUT
+                elif _timeout < TIMEOUT:
                     _timeout = TIMEOUT
                 timer.setSingleShot(True)
                 timer.timeout.connect(lambda:self._timer(wnotification, _replaceid))
