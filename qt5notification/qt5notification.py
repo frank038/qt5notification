@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# v. 1.6.4
+# v. 1.6.6
 
 from cfg import *
 if SOUND_PLAYER == 2:
@@ -390,7 +390,7 @@ class Notifier(Service.Object):
                     _value = self._on_hints(_hints, "value")
                     if _value and _value >= 0:
                         USE_APP_NAME = 2
-            #
+            # not volume style
             if USE_APP_NAME != 2:
                 # application name
                 if USE_APP_NAME == 1:
@@ -436,7 +436,7 @@ class Notifier(Service.Object):
                                 if wicon.isNull():
                                     wicon = QPixmap("icons/wicon.png")
                 #
-                p_lbl.setPixmap(wicon.scaled(p_lbl.size(),Qt.IgnoreAspectRatio))
+                p_lbl.setPixmap(wicon.scaled(p_lbl.size(),Qt.KeepAspectRatio))
                 # hbox2.addWidget(p_lbl)
                 hbox1.addWidget(p_lbl)
                 #
@@ -458,7 +458,7 @@ class Notifier(Service.Object):
                         cls_btn.setIcon(QIcon("icons/window-close.png"))
                     hbox2.addWidget(cls_btn)
                     cls_btn.clicked.connect(lambda:self._on_btn_close(wnotification, _replaceid))
-            #
+            # volume style
             elif USE_APP_NAME == 2:
                 hbox2 = QHBoxLayout()
                 hbox2.setContentsMargins(10,0,10,0)
