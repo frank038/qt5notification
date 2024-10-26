@@ -7,6 +7,7 @@ Requirements:
 - python3
 - pyqt5
 - dbus
+- DBusQtMainLoop
 - xdg
 
 Optional, for sounds:
@@ -21,5 +22,6 @@ Features
 - sounds: many options for enabling or disabling sounds for different kind of events
 - almost a complete support of freedesktop notification specs: actions, markup, hyperlink, etc.
 - volume style compatibility (see the config file for more)
+- notifications will be saved, if properly configured
 
 Do not let any window manager to manage the notification position.
