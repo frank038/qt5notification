@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# v. 2.1.0
+# v. 2.2.0
 
 import shutil,time
 from cfg import *
@@ -17,7 +17,7 @@ if SOUND_PLAYER == 1:
     from PyQt5.QtMultimedia import QSound
 if VOLUME_STYLE:
     from PyQt5.QtWidgets import QProgressBar
-from PyQt5.QtGui import QIcon, QPixmap, QScreen, QPalette
+from PyQt5.QtGui import QIcon, QPixmap, QScreen, QPalette, QFont
 from PyQt5.QtCore import QCoreApplication, Qt, QTimer, QSize
 from dbus.mainloop.pyqt5 import DBusQtMainLoop
 mainloop = DBusQtMainLoop(set_as_default=True)
@@ -158,8 +158,7 @@ class Notifier(Service.Object):
         #
         if ww in self.win_notifications:
             del self.win_notifications[ww]
-        # if ww in self.list_notifications:
-            # del self.list_notifications[ww]
+        #
         for el in self.list_notifications:
             if el[0] == ww:
                 self.list_notifications.remove(el)
@@ -261,7 +260,7 @@ class Notifier(Service.Object):
                 ret_icon = self._on_desktop_entry(os.path.basename(_desktop_entry))
             #
             p_icon = self._find_icon(ret_icon, _icon, _hints, 64)
-        #
+            #
         _not_data = NotSave()
         _not_data.nname = _not_name
         _not_data.appname = _appname
@@ -436,7 +435,7 @@ class Notifier(Service.Object):
                 progress_bar.setValue(int(_value))
                 if _timeout == -1:
                     _timeout = TIMEOUT
-                elif _timeout < TIMEOUT:
+                elif _timeout > TIMEOUT_MAX:
                     _timeout = TIMEOUT
                 #
                 timer = QTimer()
@@ -478,13 +477,12 @@ class Notifier(Service.Object):
             wnotification.setAttribute(Qt.WA_X11NetWmWindowTypeNotification)
             # wnotification.setWindowFlags(wnotification.windowFlags() | Qt.FramelessWindowHint)
             # wnotification.setWindowFlags(wnotification.windowFlags() | Qt.SplashScreen)
-            wnotification.setWindowFlags(wnotification.windowFlags() | Qt.WindowDoesNotAcceptFocus | Qt.FramelessWindowHint)
+            wnotification.setWindowFlags(wnotification.windowFlags() | Qt.WindowDoesNotAcceptFocus | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
             #
             if old_wgeom:
                 wnotification.setGeometry(old_wgeom)
             else:
                 if self.y == 0 or self.list_notifications == []:
-                # if self.y == 0:
                     yy = YPAD
                 else:
                     yy = self.y+4
@@ -536,7 +534,7 @@ class Notifier(Service.Object):
                 if (_i_size_w > _i_size_h and round(_i_size_w/_i_size_h,1) < 2):
                     _i_h = min(_i_size_h, ICON_SIZE)
                     p_lbl.setPixmap(wicon.scaledToHeight(_i_h))
-                #
+                # # height doesnt double width
                 else:
                     _i_w = min(_i_size_w, ICON_SIZE)
                     p_lbl.setPixmap(wicon.scaledToWidth(_i_w))
@@ -547,6 +545,12 @@ class Notifier(Service.Object):
                 # summary
                 summary_lbl = QLabel(_summ)
                 summary_lbl.setContentsMargins(0,0,0,0)
+                if summary_lbl.size().width() > MAX_WIDTH:
+                    summary_lbl.setWordWrap(True)
+                    summary_lbl.resize(summary_lbl.sizeHint())
+                    summary_lbl.update()
+                #
+                summary_lbl.setStyleSheet("font-weight: bold")
                 hbox2.addWidget(summary_lbl, stretch=1, alignment=Qt.AlignLeft)
                 # close button
                 if _replaceid == 0 or _replaceid > 1:
@@ -557,6 +561,7 @@ class Notifier(Service.Object):
                     if QIcon.hasThemeIcon("window-close"):
                         cls_btn.setIcon(QIcon.fromTheme("window-close"))
                     else:
+                        # cls_btn.setText("x")
                         cls_btn.setIcon(QIcon("icons/window-close.png"))
                     hbox2.addWidget(cls_btn)
                     cls_btn.clicked.connect(lambda:self._on_btn_close(wnotification, _replaceid))
@@ -567,6 +572,7 @@ class Notifier(Service.Object):
             elif USE_APP_NAME == 2:
                 hbox2 = QHBoxLayout()
                 hbox2.setContentsMargins(10,0,10,0)
+                # vbox.addLayout(hbox2)
                 hbox1.addLayout(hbox2)
                 #
                 # icon label
@@ -648,6 +654,8 @@ class Notifier(Service.Object):
                     self.act_btn.setContentsMargins(0,0,0,0)
                     self.act_btn.setFlat(True)
                     self.act_btn.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+                    # border style of buttons
+                    # border_color = bcolor = self.act_btn.palette().color(QPalette.Text).name()
                     border_color = BTN_BORDER_COLOR
                     self.act_btn.setStyleSheet("border :2px solid ;"
                                              "border-color : {};".format(border_color))
@@ -660,7 +668,7 @@ class Notifier(Service.Object):
                 timer=QTimer()
                 if _timeout == -1:
                     _timeout = TIMEOUT
-                elif _timeout < TIMEOUT:
+                elif _timeout > TIMEOUT_MAX:
                     _timeout = TIMEOUT
                 timer.setSingleShot(True)
                 timer.timeout.connect(lambda:self._timer(wnotification, _replaceid))

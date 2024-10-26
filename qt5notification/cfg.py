@@ -1,6 +1,8 @@
 ########
 # the notifications timeout (ms) - default value 3000
-TIMEOUT=3000
+TIMEOUT=6000
+# MAXIMUM_TIMEOUT: 0 to disable or number (ms)
+TIMEOUT_MAX=20000
 # application name in the notification
 USE_APP_NAME=0
 # minimal width of the notification
@@ -22,7 +24,7 @@ SOUND_PLAYER=1
 XPAD=10
 YPAD=10
 # icon theme e.g. "Adwaita" or "" for using the default
-ICON_THEME="Adwaita"
+ICON_THEME=""
 # applications to skip - between quotes and comma separated
 SKIP_APPS=[]
 # border width and colour
@@ -30,9 +32,9 @@ BORDER_SIZE=2
 BORDER_COLOR="#7F7F7F"
 # action button border colour
 BTN_BORDER_COLOR="#D4CACA"
-# do not show: 0 do not use this - any value: 1 only urgency low - 2 only urgency normal and low - 3 none
+# do not show: 0 do not use this - any value: 1 only urgency low - 2 only urgency normal and low - 3 always
 # a file named notificationdonotuse_THE_VALUE_ABOVE should exist in this program directory
-DO_NOT_SHOW=0
+DO_NOT_SHOW=3
 # volume style - use a progress bar instead of text: 1 yes - 0 no
 # e.g.: notify-send some_not_used_summary NORMALIZED/NOT_NORMALIZED_VALUE -i AN_ICON --hint=string:x-canonical-private-synchronous:None --hint=int:value:NORMALIZED_VALUE
 # NORMALIZED_VALUE: between 0 and 100, or 0 or 100
@@ -46,4 +48,15 @@ PBAR_COLOR="#6A6A6A"
 SHOW_VALUE=0
 # skip audio notification: 0 play sound - 1 do not play
 VOLUME_NO_AUDIO=0
+###
+# save notifications: 0 no - 1 yes - 2 yes and only for known apps
+SAVE_NOTIFICATION=1
+# do not save if from these applications (application name)
+SKIP_APPS2=["Applet NetworkManager"]
+# save only from these applications
+ONLY_APPS=[]
+# do not save notifications closed by the user: 0 no - 1 yes
+SKIP_CLOSED_BY_USER=0
+# full path to store notifications (folder)
+PATH_TO_STORE="/tmp/mynots"
 ########
